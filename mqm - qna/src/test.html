@@ -1,0 +1,555 @@
+{% extends "base.html" %}
+{% load mathfilters %}
+{% load static %}
+
+
+{% block title %}
+Annotator: Labels
+{% endblock %}
+
+{% block progress_info %}
+<div class="progress-info">
+  <div class="w3-light-grey">
+
+    {% with width_percentage=tester.progress|floatformat:2|div:tester.max_count|floatformat:2|mul:100 %}
+    <div id="myBar" class="w3-container w3-green" style="height:24px;width:{{ width_percentage }}%"></div>
+    {% endwith %}
+  </div>
+  <div class="progress-title">Progress: {{tester.progress}} / {{tester.max_count}}</div>
+  <div class="progress-title">Number of sentences: {{source_text|length}}</div>
+  <div class="progress-title">Current Index: {{document_index_number}}</div>
+  <div style="
+  display: flex;
+  width: 100%;
+  flex-grow: 1;
+  flex-wrap: wrap;
+  align-content: center;
+  justify-content: center;
+">
+    <a class="previous-button previous" href="../{{previous_document_id}}" style="display: inline-block; margin: 10px;
+  flex-grow: 1;
+  text-align: center;">Previous</a>
+
+    <a class="previous-button previous" href="../{{next_document_id}}" style="display: inline-block; margin: 10px;
+  flex-grow: 1;
+  text-align: center;">Next</a>
+  </div>
+</div>
+{% endblock %}
+
+
+{% block content %}
+<div class="Text-Overview">
+  <div style="background: white; border-radius: 10px; max-width: 370px;">
+    <div class="unstructured-original">
+      <h2>Source Text</h2>
+      <div class="text-showcase text-scrollable">
+        {% for text in source_text %}
+        <p id="source_{{ forloop.counter }}" class="translation-segment source_segment">{% for char in text %}<span class="character">{{ char }}</span>{% endfor %}</p>
+{% endfor %}
+
+      
+      </div>
+    </div>
+  </div>
+  <div style="background: white; border-radius: 10px; max-width: 370px;">
+    <div class="translation-with-separations">
+      <div style="display: flex;">
+        <h2 style="flex:1 1 0">Translated Text</h2>
+         <button style="flex:1 1 0; align-self: center;" class="button slim" id="highlightBtn">Label Error</button> 
+      </div>
+
+      <div class="text-showcase text-scrollable text-showcase2">
+        {% for text in reference_text %}
+          <p id="reference_{{  forloop.counter0|add:"1" }}" class="translation-segment reference_segment">{% for char in text %}<span class="character">{{ char }}</span>{% endfor %}</p>
+        {% endfor %}
+      </div>
+
+    </div>
+  </div>
+  <div class="previous-next"></div>
+</div>
+<div class="Interaction-Input">
+  <div class="annotations">
+    <h2>Annotations</h2>
+    <div class="text-showcase options">
+      <div class="highlightedTextOptions-button-container">
+        <div class="highlightedTextOptions-container">
+          <input readonly id="highlightedTextOptions" type="text" />
+          <div class="dropdown-options" style="display: block;">
+
+          </div>
+        </div>
+        <button class="button slim" id="deleteBtn">Delete Highlight</button>
+      </div>
+      <div class="guidelines">
+        <details>
+          <summary>Accuracy</summary>
+          <ul class="evaluation">
+            <div style="display: flex; justify-content: space-between">
+              <div style="color: white">Mistranslation</div>
+              <ul class="buttons-container">
+                <li>
+                  <a class="major-button" id="accuracy_neutral_mistranslation">Neutral</a>
+                </li>
+                <li>
+                  <a class="minor-button" id="accuracy_minor_mistranslation">Minor</a>
+                </li>
+                <li>
+                  <a class="major-button" id="accuracy_major_mistranslation">Major</a>
+                </li>
+                <li>
+                  <a class="major-button" id="accuracy_critical_mistranslation">Critical</a>
+                </li>
+              </ul>
+            </div>
+
+            <div style="display: flex; justify-content: space-between">
+              <div style="color: white">Addition</div>
+              <ul class="buttons-container">
+                <li>
+                  <a class="major-button" id="accuracy_neutral_addition">Neutral</a>
+                </li>
+                <li>
+                  <a class="minor-button" id="accuracy_minor_addition">Minor</a>
+                </li>
+                <li>
+                  <a class="major-button" id="accuracy_major_addition">Major</a>
+                </li>
+
+                <li>
+                  <a class="major-button" id="accuracy_critical_addition">Critical</a>
+                </li>
+              </ul>
+            </div>
+
+            <div style="display: flex; justify-content: space-between">
+              <div style="color: white">Omission</div>
+              <ul class="buttons-container">
+                <li>
+                  <a class="major-button" id="accuracy_neutral_omission">Neutral</a>
+                </li>
+                <li>
+                  <a class="minor-button" id="accuracy_minor_omission">Minor</a>
+                </li>
+                <li>
+                  <a class="major-button" id="accuracy_major_omission">Major</a>
+                </li>
+
+                <li>
+                  <a class="major-button" id="accuracy_critical_omission">Critical</a>
+                </li>
+              </ul>
+            </div>
+
+            <div style="display: flex; justify-content: space-between">
+              <div style="color: white">Untranslated</div>
+              <ul class="buttons-container">
+                <li>
+                  <a class="major-button" id="accuracy_neutral_untranslated">Neutral</a>
+                </li>
+                <li>
+                  <a class="minor-button" id="accuracy_minor_untranslated">Minor</a>
+                </li>
+                <li>
+                  <a class="major-button" id="accuracy_major_untranslated">Major</a>
+                </li>
+                <li>
+                  <a class="major-button" id="accuracy_critical_untranslated">Critical</a>
+                </li>
+              </ul>
+            </div>
+          </ul>
+        </details>
+        <details>
+          <summary>Linguistic Conventions</summary>
+          <ul class="evaluation">
+            <div style="display: flex; justify-content: space-between">
+              <div style="color: white">Grammar</div>
+              <ul class="buttons-container">
+                <li>
+                  <a class="major-button" id="linguistic_neutral_grammar">Neutral</a>
+                </li>
+                <li>
+                  <a class="minor-button" id="linguistic_minor_grammar">Minor</a>
+                </li>
+                <li>
+                  <a class="major-button" id="linguistic_major_grammar">Major</a>
+                </li>
+
+                <li>
+                  <a class="major-button" id="linguistic_critical_grammar">Critical</a>
+                </li>
+              </ul>
+            </div>
+
+            <div style="display: flex; justify-content: space-between">
+              <div style="color: white">Punctuation</div>
+              <ul class="buttons-container">
+                <li>
+                  <a class="major-button" id="linguistic_neutral_punctuation">Neutral</a>
+                </li>
+                <li>
+                  <a class="minor-button" id="linguistic_minor_punctuation">Minor</a>
+                </li>
+                <li>
+                  <a class="major-button" id="linguistic_major_punctuation">Major</a>
+                </li>
+                <li>
+                  <a class="major-button" id="linguistic_critical_punctuation">Critical</a>
+                </li>
+              </ul>
+            </div>
+
+            <div style="display: flex; justify-content: space-between">
+              <div style="color: white">Spelling</div>
+              <ul class="buttons-container">
+                <li>
+                  <a class="major-button" id="linguistic_neutral_spelling">Neutral</a>
+                </li>
+                <li>
+                  <a class="minor-button" id="linguistic_minor_spelling">Minor</a>
+                </li>
+                <li>
+                  <a class="major-button" id="linguistic_major_spelling">Major</a>
+                </li>
+
+                <li>
+                  <a class="major-button" id="linguistic_critical_spelling">Critical</a>
+                </li>
+              </ul>
+            </div>
+
+            <div style="display: flex; justify-content: space-between">
+              <div style="color: white">Character encoding</div>
+              <ul class="buttons-container">
+                <li>
+                  <a class="major-button" id="linguistic_neutral_character_encoding">Neutral</a>
+                </li>
+                <li>
+                  <a class="minor-button" id="linguistic_minor_character_encoding">Minor</a>
+                </li>
+                <li>
+                  <a class="major-button" id="linguistic_major_character_encoding">Major</a>
+                </li>
+                <li>
+                  <a class="major-button" id="linguistic_critical_character_encoding">Critical</a>
+                </li>
+              </ul>
+            </div>
+
+            <div style="display: flex; justify-content: space-between">
+              <div style="color: white">Register</div>
+              <ul class="buttons-container">
+                <li>
+                  <a class="major-button" id="linguistic_neutral_register">Neutral</a>
+                </li>
+                <li>
+                  <a class="minor-button" id="linguistic_minor_register">Minor</a>
+                </li>
+                <li>
+                  <a class="major-button" id="linguistic_major_register">Major</a>
+                </li>
+                <li>
+                  <a class="major-button" id="linguistic_critical_register">Critical</a>
+                </li>
+              </ul>
+            </div>
+          </ul>
+        </details>
+        <details>
+          <summary>Terminology</summary>
+          <ul class="evaluation">
+            <div style="display: flex; justify-content: space-between">
+              <div style="color: white">Inconsistent use of terminology</div>
+              <ul class="buttons-container">
+                <li>
+                  <a class="major-button" id="terminology_neutral_inconsistent">Neutral</a>
+                </li>
+                <li>
+                  <a class="minor-button" id="terminology_minor_inconsistent">Minor</a>
+                </li>
+                <li>
+                  <a class="major-button" id="terminology_major_inconsistent">Major</a>
+                </li>
+                <li>
+                  <a class="major-button" id="terminology_critical_inconsistent">Critical</a>
+                </li>
+              </ul>
+            </div>
+
+            <div style="display: flex; justify-content: space-between">
+              <div style="color: white">Wrong term</div>
+              <ul class="buttons-container">
+                <li>
+                  <a class="major-button" id="terminology_neutral_wrong_term">Neutral</a>
+                </li>
+                <li>
+                  <a class="minor-button" id="terminology_minor_wrong_term">Minor</a>
+                </li>
+                <li>
+                  <a class="major-button" id="terminology_major_wrong_term">Major</a>
+                </li>
+
+                <li>
+                  <a class="major-button" id="terminology_critical_wrong_term">Critical</a>
+                </li>
+              </ul>
+            </div>
+          </ul>
+        </details>
+        <details>
+          <summary>Style</summary>
+          <ul class="evaluation">
+            <div style="display: flex; justify-content: space-between">
+              <div style="color: white">Non-fluent</div>
+              <ul class="buttons-container">
+                <li>
+                  <a class="major-button" id="style_neutral_non_fluent">Neutral</a>
+                </li>
+                <li>
+                  <a class="minor-button" id="style_minor_non_fluent">Minor</a>
+                </li>
+                <li>
+                  <a class="major-button" id="style_major_non_fluent">Major</a>
+                </li>
+
+                <li>
+                  <a class="major-button" id="style_critical_non_fluent">Critical</a>
+                </li>
+              </ul>
+            </div>
+          </ul>
+        </details>
+        <details>
+          <summary>Locale Conventions</summary>
+          <ul class="evaluation">
+
+            <!-- Number format -->
+            <div style="display: flex; justify-content: space-between">
+              <div style="color: white">Number format</div>
+              <ul class="buttons-container">
+                <li><a class="major-button" id="locale_neutral_number_format">Neutral</a></li>
+                <li><a class="minor-button" id="locale_minor_number_format">Minor</a></li>
+                <li><a class="major-button" id="locale_major_number_format">Major</a></li>
+                <li><a class="major-button" id="locale_critical_number_format">Critical</a></li>
+              </ul>
+            </div>
+
+            <!-- Currency format -->
+            <div style="display: flex; justify-content: space-between">
+              <div style="color: white">Currency format</div>
+              <ul class="buttons-container">
+                <li><a class="major-button" id="locale_neutral_currency_format">Neutral</a></li>
+                <li><a class="minor-button" id="locale_minor_currency_format">Minor</a></li>
+                <li><a class="major-button" id="locale_major_currency_format">Major</a></li>
+                <li><a class="major-button" id="locale_critical_currency_format">Critical</a></li>
+              </ul>
+            </div>
+
+            <!-- Measurement format -->
+            <div style="display: flex; justify-content: space-between">
+              <div style="color: white">Measurement format</div>
+              <ul class="buttons-container">
+                <li><a class="major-button" id="locale_neutral_measurement_format">Neutral</a></li>
+                <li><a class="minor-button" id="locale_minor_measurement_format">Minor</a></li>
+                <li><a class="major-button" id="locale_major_measurement_format">Major</a></li>
+                <li><a class="major-button" id="locale_critical_measurement_format">Critical</a></li>
+              </ul>
+            </div>
+
+            <!-- Time format -->
+            <div style="display: flex; justify-content: space-between">
+              <div style="color: white">Time format</div>
+              <ul class="buttons-container">
+                <li><a class="major-button" id="locale_neutral_time_format">Neutral</a></li>
+                <li><a class="minor-button" id="locale_minor_time_format">Minor</a></li>
+                <li><a class="major-button" id="locale_major_time_format">Major</a></li>
+                <li><a class="major-button" id="locale_critical_time_format">Critical</a></li>
+              </ul>
+            </div>
+
+            <!-- Date format -->
+            <div style="display: flex; justify-content: space-between">
+              <div style="color: white">Date format</div>
+              <ul class="buttons-container">
+                <li><a class="major-button" id="locale_neutral_date_format">Neutral</a></li>
+                <li><a class="minor-button" id="locale_minor_date_format">Minor</a></li>
+                <li><a class="major-button" id="locale_major_date_format">Major</a></li>
+                <li><a class="major-button" id="locale_critical_date_format">Critical</a></li>
+              </ul>
+            </div>
+
+            <!-- Address format -->
+            <div style="display: flex; justify-content: space-between">
+              <div style="color: white">Address format</div>
+              <ul class="buttons-container">
+                <li><a class="major-button" id="locale_neutral_address_format">Neutral</a></li>
+                <li><a class="minor-button" id="locale_minor_address_format">Minor</a></li>
+                <li><a class="major-button" id="locale_major_address_format">Major</a></li>
+                <li><a class="major-button" id="locale_critical_address_format">Critical</a></li>
+              </ul>
+            </div>
+
+            <!-- Telephone format -->
+            <div style="display: flex; justify-content: space-between">
+              <div style="color: white">Telephone format</div>
+              <ul class="buttons-container">
+                <li><a class="major-button" id="locale_neutral_telephone_format">Neutral</a></li>
+                <li><a class="minor-button" id="locale_minor_telephone_format">Minor</a></li>
+                <li><a class="major-button" id="locale_major_telephone_format">Major</a></li>
+                <li><a class="major-button" id="locale_critical_telephone_format">Critical</a></li>
+              </ul>
+            </div>
+
+          </ul>
+        </details>
+
+        <!-- For Other -->
+        <details open style="font-size: 0; background-color: none;" class="always-open">
+          <summary style="display: none;">Other</summary>
+          <div style="font-size: 14px; line-height: 0px;">
+            <div style="display: flex; justify-content: space-between;">
+              <div style="margin: auto; color: white;">Other</div>
+              <ul class="buttons-container">
+                <li>
+                  <a class="major-button" id="other_neutral">Neutral</a>
+                </li>
+                <li>
+                  <a class="minor-button" id="other_minor">Minor</a>
+                </li>
+                <li>
+                  <a class="major-button" id="other_major">Major</a>
+                </li>
+                <li>
+                  <a class="major-button" id="other_critical">Critical</a>
+                </li>
+              </ul>
+            </div>
+          </div>
+        </details>
+
+        <!-- For Unintelligible -->
+        <details open style="font-size: 0; background-color: none;" class="always-open">
+          <summary style="display: none;">Unintelligible</summary>
+          <div style="font-size: 14px; line-height: 0px;">
+            <div style="display: flex; justify-content: space-between;">
+              <div style="margin: auto; color: white;">Unintelligible</div>
+              <ul class="buttons-container">
+                <li>
+                  <a class="major-button" id="unintelligible_neutral" style="opacity: 0;">Neutral</a>
+                </li>
+                <li>
+                  <a class="minor-button" id="unintelligible_minor" style="opacity: 0;">Minor</a>
+                </li>
+                <li>
+                  <a class="major-button" id="unintelligible_major">Major</a>
+                </li>
+                <li>
+                  <a class="major-button" id="unintelligible_critical">Critical</a>
+                </li>
+              </ul>
+            </div>
+          </div>
+        </details>
+
+        <details open style="font-size: 0; background-color: none;" class="always-open">
+          <summary style="display: none;">Source Error</summary>
+          <div style="font-size: 14px; line-height: 0px;">
+            <div style="display: flex; justify-content: space-between;">
+              <div style="margin: auto; color: white;">Source Error</div>
+              <ul class="buttons-container">
+                <li>
+                  <a class="major-button" id="source_neutral">Neutral</a>
+                </li>
+                <li>
+                  <a class="minor-button" id="source_minor">Minor</a>
+                </li>
+                <li>
+                  <a class="major-button" id="source_major">Major</a>
+                </li>
+                <li>
+                  <a class="major-button" id="source_critical">Critical</a>
+                </li>
+              </ul>
+            </div>
+          </div>
+        </details>
+
+        <h2 style="opacity: 0;">Evaluation Guidelines</h2>
+      </div>
+    </div>
+    <div class="button-bar">
+      <button class="button" id="saveBtn" style="position: absolute; right: 1120px; top: 2px;">Save</button>
+      <button class="button" id="noissueBtn">No Issue</button>
+      <a class="previous-button" href="../99999" class="previous" style="text-decoration: none;">Jump to next
+        unevaluated</a>
+      <button class="button" style="display: none;" id="download_json">Download json</button>
+      <button class="button" id="submit">Submit</button>
+    </div>
+  </div>
+
+  <div class="loading-screen">
+    <div class="spinner">
+      <svg class="logo-loader" width="455" height="475" viewBox="0 0 91 95" fill="none"
+        xmlns="http://www.w3.org/2000/svg">
+        <path opacity="0.8"
+          d="M15.9643 67.5245C6.69158 59.53 4.59077 44.4541 11.3053 34.0238C18.0199 23.5935 32.5228 11.0958 43.5613 6.25259C54.5997 1.40934 67.8747 7.0651 73.0614 18.8172C78.2481 30.5694 81.0726 50.6895 79.3404 63.5189C77.6081 76.3482 66.4323 85.7684 54.5059 84.46C42.5796 83.1516 25.237 75.519 15.9643 67.5245Z"
+          stroke="#00AB7D" stroke-miterlimit="10" />
+        <path opacity="0.6"
+          d="M6.60293 44.4774C4.30108 31.9429 12.4396 18.616 24.696 14.86C36.9524 11.104 56.8783 10.9516 68.9939 14.5249C81.1096 18.0983 88.1843 31.4571 84.7182 44.2278C81.252 56.9985 70.4112 74.7967 60.6309 83.7813C50.8506 92.7658 35.6373 92.7256 26.8236 83.6941C18.0099 74.6627 8.90645 57.0035 6.60293 44.4774Z"
+          stroke="#00AB7D" stroke-miterlimit="10" />
+        <path opacity="0.5"
+          d="M25.2105 79.022C12.4164 75.5793 3.80204 62.0765 6.07205 49.0176C8.34206 35.9587 17.5997 17.3547 26.6462 7.68327C35.6928 -1.98815 51.5125 -2.61638 61.8172 6.29446C72.1219 15.2053 83.6311 33.2113 87.4122 46.307C91.1933 59.4027 83.9812 73.527 71.3847 77.6968C58.7883 81.8666 38.0114 82.4647 25.2105 79.022Z"
+          stroke="#00AB7D" stroke-miterlimit="10" />
+        <path opacity="0.4"
+          d="M8.34329 64.2675C-1.0115 54.1655 -0.937792 37.7427 8.51082 27.7714C17.9594 17.8001 36.7427 6.96096 50.2556 3.68243C63.7684 0.403894 78.1189 8.69824 82.148 22.1106C86.1771 35.5229 86.1034 57.439 81.9805 70.8162C77.8576 84.1933 63.4434 92.3218 49.9272 88.8841C36.411 85.4464 17.6998 74.3678 8.34329 64.2675Z"
+          stroke="#00AB7D" stroke-miterlimit="10" />
+        <path opacity="0.3"
+          d="M2.60734 50.7364C-2.99482 37.5904 2.96417 21.8411 15.8421 15.7363C28.72 9.63159 51.1337 6.13024 65.6266 7.95631C80.1195 9.78237 91.2919 23.0255 90.456 37.3928C89.62 51.76 81.6942 72.7882 72.8437 84.1332C63.9932 95.4783 46.86 97.9728 34.7712 89.6969C22.6823 81.4209 8.20782 63.8975 2.60566 50.7465L2.60734 50.7364Z"
+          stroke="#00AB7D" stroke-miterlimit="10" />
+      </svg>
+    </div>
+  </div>
+
+  <div id="submission-present" style="opacity: 0; position: absolute; right: 10px; bottom: 5px;">
+    You have already submitted a file for this example.
+  </div>
+
+  <script type="text/javascript">
+    const UPLOAD_URL = "{% url 'annotator_submit' tester.token_id document_id %}"
+    const SAVE_URL = "{% url 'annotator_save' tester.token_id document_id %}"
+    const NOISSUE_URL = "{% url 'annotator_noissue' tester.token_id document_id %}"
+    console.log(SAVE_URL);
+    const CSRF_TOKEN = "{{ csrf_token }}"
+
+    const NEXT_DOCUMENT_ID = "{{next_document_id}}"
+    const TESTER_ID = "{{ tester.token_id }}"
+    const ANNOTATION_SET_ID = "{{ tester.annotation_set.identifier }}"
+
+
+    const next_url = "{% url 'annotator_submit' tester.token_id document_id %}"
+
+    const annotations_data = "{{ annotations_data|escapejs }}";
+    console.log(annotations_data.slice(1, annotations_data.length - 1));
+    console.log(JSON.parse(annotations_data));
+
+
+    function handleClick() {
+      index = parseInt(window.location.href.split('/')[window.location.href.replace("annotator", "slider").split('/')
+        .length - 2])
+      if (index < 1) {
+        index = 1
+      }
+      newlink = window.location.href.replace("annotator", "slider")
+      newlink = newlink.split('/')
+      newlink[window.location.href.replace("annotator", "slider").split('/').length - 2] = "" + (index - 1)
+      location.href = newlink.join('/');
+    }
+  </script>
+  <script src="{% static 'js/annotator.js' %}"></script>
+
+
+
+
+  {% endblock %}
